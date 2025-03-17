@@ -1,1 +1,799 @@
-# lol
+import java.util.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+// Abstract User Class
+abstract class User {
+    protected int userId;
+    protected String name;
+    protected String role;
+    protected String username;
+    protected String password;
+
+    public User(int userId, String name, String role, String username, String password) {
+        this.userId = userId;
+        this.name = name;
+        this.role = role;
+        this.username = username;
+        this.password = password;
+    }
+
+    // Getters and Setters
+    public int getUserId() { return userId; }
+    public void setUserId(int userId) { this.userId = userId; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+
+    // Common Methods
+    public boolean login(String username, String password) {
+        return this.username.equals(username) && this.password.equals(password);
+    }
+
+    public void logout() {
+        System.out.println(name + " has logged out.");
+    }
+
+    public void updateProfile(String newName) {
+        this.name = newName;
+        System.out.println("Profile updated successfully.");
+    }
+
+    public void changePassword(String oldPassword, String newPassword) {
+        if (this.password.equals(oldPassword)) {
+            this.password = newPassword;
+            System.out.println("Password changed successfully.");
+        } else {
+            System.out.println("Incorrect old password.");
+        }
+    }
+}
+
+// Student Class
+class Student extends User {
+    private int studentId;
+    private String className;
+    private List<Attendance> attendanceRecords;
+
+    public Student(int userId, String name, String username, String password, int studentId, String className) {
+        super(userId, name, "Student", username, password);
+        this.studentId = studentId;
+        this.className = className;
+        this.attendanceRecords = new ArrayList<>();
+    }
+
+    // Getters and Setters
+    public int getStudentId() { return studentId; }
+    public void setStudentId(int studentId) { this.studentId = studentId; }
+    public String getClassName() { return className; }
+    public void setClassName(String className) { this.className = className; }
+    public List<Attendance> getAttendanceRecords() { return attendanceRecords; }
+
+    // Attendance Management Methods
+    public void viewAttendance() {
+        if (attendanceRecords.isEmpty()) {
+            System.out.println("No attendance records available.");
+            return;
+        }
+        System.out.println("Attendance records for " + name + ":");
+        for (Attendance attendance : attendanceRecords) {
+            System.out.println("Date: " + attendance.getDate() + ", Status: " + attendance.getStatus());
+        }
+    }
+
+    public double calculateAttendancePercentage() {
+        if (attendanceRecords.isEmpty()) return 0.0;
+        int presentCount = 0;
+        for (Attendance attendance : attendanceRecords) {
+            if (attendance.getStatus().equalsIgnoreCase("Present")) presentCount++;
+        }
+        return (double) presentCount / attendanceRecords.size() * 100;
+    }
+
+    public void submitLeaveRequest(String date, String reason) {
+        System.out.println("Leave request submitted for " + date + ". Reason: " + reason);
+    }
+
+    public void addAttendanceRecord(Attendance attendance) {
+        attendanceRecords.add(attendance);
+    }
+}
+
+// Teacher Class
+class Teacher extends User {
+    private int teacherId;
+    private String subject;
+
+    public Teacher(int userId, String name, String username, String password, int teacherId, String subject) {
+        super(userId, name, "Teacher", username, password);
+        this.teacherId = teacherId;
+        this.subject = subject;
+    }
+
+    // Getters and Setters
+    public int getTeacherId() { return teacherId; }
+    public void setTeacherId(int teacherId) { this.teacherId = teacherId; }
+    public String getSubject() { return subject; }
+    public void setSubject(String subject) { this.subject = subject; }
+
+    // Attendance Management Methods
+    public void markAttendance(Student student, String date, String status) {
+        if (!isValidDate(date)) {
+            System.out.println("Invalid date format. Please use yyyy-MM-dd.");
+            return;
+        }
+        Attendance attendance = new Attendance(0, student.getStudentId(), date, status);
+        student.addAttendanceRecord(attendance);
+        System.out.println("Attendance marked for " + student.getName() + " on " + date + ": " + status);
+    }
+
+    public void updateAttendance(Student student, String date, String newStatus) {
+        if (!isValidDate(date)) {
+            System.out.println("Invalid date format. Please use yyyy-MM-dd.");
+            return;
+        }
+        List<Attendance> records = student.getAttendanceRecords();
+        for (Attendance record : records) {
+            if (record.getDate().equals(date)) {
+                record.setStatus(newStatus);
+                System.out.println("Attendance updated for " + student.getName() + " on " + date + ": " + newStatus);
+                return;
+            }
+        }
+        System.out.println("No attendance record found for that date.");
+    }
+
+    public void viewStudentAttendance(Student student) {
+        System.out.println("Attendance records for " + student.getName() + ":");
+        student.viewAttendance();
+    }
+
+    public void approveLeaveRequest(Student student, String date) {
+        System.out.println("Leave request approved for " + student.getName() + " on " + date);
+    }
+
+    public void rejectLeaveRequest(Student student, String date, String reason) {
+        System.out.println("Leave request rejected for " + student.getName() + " on " + date + ". Reason: " + reason);
+    }
+
+    private boolean isValidDate(String date) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate.parse(date, formatter);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+}
+
+// Admin Class
+class Admin extends User {
+    private int adminId;
+    private List<Student> students;
+    private List<Teacher> teachers;
+
+    public Admin(int userId, String name, String username, String password, int adminId) {
+        super(userId, name, "Admin", username, password);
+        this.adminId = adminId;
+        this.students = new ArrayList<>();
+        this.teachers = new ArrayList<>();
+    }
+
+    // Getters and Setters
+    public int getAdminId() { return adminId; }
+    public void setAdminId(int adminId) { this.adminId = adminId; }
+    public List<Student> getAllStudents() { return students; }
+    public List<Teacher> getAllTeachers() { return teachers; }
+
+    // User Management Methods
+    public void addStudent(Student student) {
+        students.add(student);
+        System.out.println("Student " + student.getName() + " added successfully.");
+    }
+
+    public void addTeacher(Teacher teacher) {
+        teachers.add(teacher);
+        System.out.println("Teacher " + teacher.getName() + " added successfully.");
+    }
+
+    public void updateStudent(Student student, String newName, String newClass) {
+        student.updateProfile(newName);
+        student.setClassName(newClass);
+        System.out.println("Student updated successfully.");
+    }
+
+    public void updateTeacher(Teacher teacher, String newName, String newSubject) {
+        teacher.updateProfile(newName);
+        teacher.setSubject(newSubject);
+        System.out.println("Teacher updated successfully.");
+    }
+
+    public void deleteStudent(Student student) {
+        students.remove(student);
+        System.out.println("Student " + student.getName() + " deleted successfully.");
+    }
+
+    public void deleteTeacher(Teacher teacher) {
+        teachers.remove(teacher);
+        System.out.println("Teacher " + teacher.getName() + " deleted successfully.");
+    }
+
+    public Student findStudentById(int studentId) {
+        for (Student student : students) {
+            if (student.getStudentId() == studentId) return student;
+        }
+        return null;
+    }
+
+    public Teacher findTeacherById(int teacherId) {
+        for (Teacher teacher : teachers) {
+            if (teacher.getTeacherId() == teacherId) return teacher;
+        }
+        return null;
+    }
+
+    public void assignStudentToClass(Student student, String newClass) {
+        student.setClassName(newClass);
+        System.out.println("Student " + student.getName() + " assigned to class " + newClass);
+    }
+
+    public void assignTeacherToSubject(Teacher teacher, String newSubject) {
+        teacher.setSubject(newSubject);
+        System.out.println("Teacher " + teacher.getName() + " assigned to subject " + newSubject);
+    }
+}
+
+// Attendance Class
+class Attendance {
+    private int attendanceId;
+    private int studentId;
+    private String date;
+    private String status;
+
+    public Attendance(int attendanceId, int studentId, String date, String status) {
+        this.attendanceId = attendanceId;
+        this.studentId = studentId;
+        this.date = date;
+        this.status = status;
+    }
+
+    // Getters and Setters
+    public int getAttendanceId() { return attendanceId; }
+    public void setAttendanceId(int attendanceId) { this.attendanceId = attendanceId; }
+    public int getStudentId() { return studentId; }
+    public void setStudentId(int studentId) { this.studentId = studentId; }
+    public String getDate() { return date; }
+    public void setDate(String date) { this.date = date; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+}
+
+// Main Application Class
+public class AttendanceManagementSystem {
+    private static Admin admin;
+    private static List<Student> students = new ArrayList<>();
+    private static List<Teacher> teachers = new ArrayList<>();
+    private static User currentUser = null;
+    private static Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        initializeSystem();
+        showLoginMenu();
+        scanner.close(); // Close scanner to prevent resource leak
+    }
+
+    private static void initializeSystem() {
+        // Create sample admin
+        admin = new Admin(1, "Admin User", "admin", "admin123", 1001);
+
+        // Create sample students
+        Student student1 = new Student(2, "Hong Muoyleang", "muoyleang", "pass123", 2001, "CS101");
+        Student student2 = new Student(3, "Sim Sokly", "sokly", "pass123", 2002, "CS101");
+        Student student3 = new Student(4, "Yen Linda", "linda", "pass123", 2003, "CS102");
+        students.add(student1);
+        students.add(student2);
+        students.add(student3);
+
+        // Add students to admin's list
+        for (Student student : students) {
+            admin.addStudent(student);
+        }
+
+        // Create sample teachers
+        Teacher teacher1 = new Teacher(5, "John Doe", "john", "pass123", 3001, "Java Programming");
+        Teacher teacher2 = new Teacher(6, "Jane Smith", "jane", "pass123", 3002, "Database Management");
+        teachers.add(teacher1);
+        teachers.add(teacher2);
+
+        // Add teachers to admin's list
+        for (Teacher teacher : teachers) {
+            admin.addTeacher(teacher);
+        }
+
+        // Create some sample attendance records
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        for (int i = 0; i < 5; i++) {
+            LocalDate date = today.minusDays(i);
+            String formattedDate = date.format(formatter);
+            if (i % 3 == 0) {
+                teacher1.markAttendance(student1, formattedDate, "Present");
+                teacher1.markAttendance(student2, formattedDate, "Absent");
+                teacher1.markAttendance(student3, formattedDate, "Present");
+            } else if (i % 3 == 1) {
+                teacher1.markAttendance(student1, formattedDate, "Present");
+                teacher1.markAttendance(student2, formattedDate, "Present");
+                teacher1.markAttendance(student3, formattedDate, "Late");
+            } else {
+                teacher1.markAttendance(student1, formattedDate, "Absent");
+                teacher1.markAttendance(student2, formattedDate, "Present");
+                teacher1.markAttendance(student3, formattedDate, "Excused");
+            }
+        }
+        System.out.println("System initialized with sample data.");
+    }
+
+    private static void showLoginMenu() {
+        while (true) {
+            System.out.println("===== Attendance Management System =====");
+            System.out.println("1. Login");
+            System.out.println("2. Exit");
+            System.out.print("Choose an option: ");
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Clear buffer
+            switch (choice) {
+                case 1:
+                    login();
+                    break;
+                case 2:
+                    System.out.println("Thank you for using the Attendance Management System. Goodbye!");
+                    return;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
+    private static void login() {
+        System.out.print("Username: ");
+        String username = scanner.nextLine();
+        System.out.print("Password: ");
+        String password = scanner.nextLine();
+
+        // Check admin
+        if (admin.getUsername().equals(username) && admin.getPassword().equals(password)) {
+            currentUser = admin;
+            System.out.println("Welcome, " + admin.getName() + " (Admin)");
+            showAdminMenu();
+            return;
+        }
+
+        // Check teachers
+        for (Teacher teacher : teachers) {
+            if (teacher.getUsername().equals(username) && teacher.getPassword().equals(password)) {
+                currentUser = teacher;
+                System.out.println("Welcome, " + teacher.getName() + " (Teacher)");
+                showTeacherMenu((Teacher) currentUser);
+                return;
+            }
+        }
+
+        // Check students
+        for (Student student : students) {
+            if (student.getUsername().equals(username) && student.getPassword().equals(password)) {
+                currentUser = student;
+                System.out.println("Welcome, " + student.getName() + " (Student)");
+                showStudentMenu((Student) currentUser);
+                return;
+            }
+        }
+
+        System.out.println("Invalid username or password. Please try again.");
+    }
+
+    private static void showAdminMenu() {
+        Admin admin = (Admin) currentUser;
+        while (true) {
+            System.out.println("===== Admin Menu =====");
+            System.out.println("1. Manage Students");
+            System.out.println("2. Manage Teachers");
+            System.out.println("3. Generate Reports");
+            System.out.println("4. Update Profile");
+            System.out.println("5. Change Password");
+            System.out.println("6. Logout");
+            System.out.print("Choose an option: ");
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Clear buffer
+            switch (choice) {
+                case 1:
+                    manageStudents(admin);
+                    break;
+                case 2:
+                    manageTeachers(admin);
+                    break;
+                case 3:
+                    generateAdminReports(admin);
+                    break;
+                case 4:
+                    updateAdminProfile(admin);
+                    break;
+                case 5:
+                    changeAdminPassword(admin);
+                    break;
+                case 6:
+                    admin.logout();
+                    currentUser = null;
+                    return;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
+    private static void manageStudents(Admin admin) {
+        while (true) {
+            System.out.println("===== Manage Students =====");
+            System.out.println("1. View All Students");
+            System.out.println("2. Add New Student");
+            System.out.println("3. Update Student");
+            System.out.println("4. Delete Student");
+            System.out.println("5. Assign Student to Class");
+            System.out.println("6. Back to Admin Menu");
+            System.out.print("Choose an option: ");
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Clear buffer
+            switch (choice) {
+                case 1:
+                    List<Student> allStudents = admin.getAllStudents();
+                    System.out.println("----- All Students -----");
+                    for (Student student : allStudents) {
+                        System.out.println("ID: " + student.getStudentId() +
+                                ", Name: " + student.getName() +
+                                ", Class: " + student.getClassName());
+                    }
+                    break;
+                case 2:
+                    // Add new student
+                    System.out.print("Enter student name: ");
+                    String name = scanner.nextLine();
+                    System.out.print("Enter username: ");
+                    String username = scanner.nextLine();
+                    System.out.print("Enter password: ");
+                    String password = scanner.nextLine();
+                    System.out.print("Enter class: ");
+                    String className = scanner.nextLine();
+                    int userId = admin.getAllStudents().size() + 10;
+                    int studentId = 2000 + admin.getAllStudents().size() + 1;
+                    Student newStudent = new Student(userId, name, username, password, studentId, className);
+                    admin.addStudent(newStudent);
+                    students.add(newStudent);
+                    break;
+                case 3:
+                    // Update student
+                    System.out.print("Enter student ID to update: ");
+                    int updateId = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
+                    Student studentToUpdate = admin.findStudentById(updateId);
+                    if (studentToUpdate != null) {
+                        System.out.print("Enter new name (current: " + studentToUpdate.getName() + "): ");
+                        String newName = scanner.nextLine();
+                        System.out.print("Enter new class (current: " + studentToUpdate.getClassName() + "): ");
+                        String newClass = scanner.nextLine();
+                        admin.updateStudent(studentToUpdate, newName, newClass);
+                    } else {
+                        System.out.println("Student not found.");
+                    }
+                    break;
+                case 4:
+                    // Delete student
+                    System.out.print("Enter student ID to delete: ");
+                    int deleteId = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
+                    Student studentToDelete = admin.findStudentById(deleteId);
+                    if (studentToDelete != null) {
+                        admin.deleteStudent(studentToDelete);
+                        students.remove(studentToDelete);
+                    } else {
+                        System.out.println("Student not found.");
+                    }
+                    break;
+                case 5:
+                    // Assign student to class
+                    System.out.print("Enter student ID: ");
+                    int inputStudentId = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
+                    Student student = admin.findStudentById(inputStudentId);
+                    if (student != null) {
+                        System.out.print("Enter class name: ");
+                        String newClass = scanner.nextLine();
+                        admin.assignStudentToClass(student, newClass);
+                    } else {
+                        System.out.println("Student not found.");
+                    }
+                    break;
+                case 6:
+                    return;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
+    private static void manageTeachers(Admin admin) {
+        while (true) {
+            System.out.println("===== Manage Teachers =====");
+            System.out.println("1. View All Teachers");
+            System.out.println("2. Add New Teacher");
+            System.out.println("3. Update Teacher");
+            System.out.println("4. Delete Teacher");
+            System.out.println("5. Assign Teacher to Subject");
+            System.out.println("6. Back to Admin Menu");
+            System.out.print("Choose an option: ");
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Clear buffer
+            switch (choice) {
+                case 1:
+                    List<Teacher> allTeachers = admin.getAllTeachers();
+                    System.out.println("----- All Teachers -----");
+                    for (Teacher teacher : allTeachers) {
+                        System.out.println("ID: " + teacher.getTeacherId() +
+                                ", Name: " + teacher.getName() +
+                                ", Subject: " + teacher.getSubject());
+                    }
+                    break;
+                case 2:
+                    // Add new teacher
+                    System.out.print("Enter teacher name: ");
+                    String name = scanner.nextLine();
+                    System.out.print("Enter username: ");
+                    String username = scanner.nextLine();
+                    System.out.print("Enter password: ");
+                    String password = scanner.nextLine();
+                    System.out.print("Enter subject: ");
+                    String subject = scanner.nextLine();
+                    int userId = admin.getAllTeachers().size() + 20;
+                    int teacherId = 3000 + admin.getAllTeachers().size() + 1;
+                    Teacher newTeacher = new Teacher(userId, name, username, password, teacherId, subject);
+                    admin.addTeacher(newTeacher);
+                    teachers.add(newTeacher);
+                    break;
+                case 3:
+                    // Update teacher
+                    System.out.print("Enter teacher ID to update: ");
+                    int updateId = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
+                    Teacher teacherToUpdate = admin.findTeacherById(updateId);
+                    if (teacherToUpdate != null) {
+                        System.out.print("Enter new name (current: " + teacherToUpdate.getName() + "): ");
+                        String newName = scanner.nextLine();
+                        System.out.print("Enter new subject (current: " + teacherToUpdate.getSubject() + "): ");
+                        String newSubject = scanner.nextLine();
+                        admin.updateTeacher(teacherToUpdate, newName, newSubject);
+                    } else {
+                        System.out.println("Teacher not found.");
+                    }
+                    break;
+                case 4:
+                    // Delete teacher
+                    System.out.print("Enter teacher ID to delete: ");
+                    int deleteId = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
+                    Teacher teacherToDelete = admin.findTeacherById(deleteId);
+                    if (teacherToDelete != null) {
+                        admin.deleteTeacher(teacherToDelete);
+                        teachers.remove(teacherToDelete);
+                    } else {
+                        System.out.println("Teacher not found.");
+                    }
+                    break;
+                case 5:
+                    // Assign teacher to subject
+                    System.out.print("Enter teacher ID: ");
+                    int inputTeacherId = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
+                    Teacher teacher = admin.findTeacherById(inputTeacherId);
+                    if (teacher != null) {
+                        System.out.print("Enter subject name: ");
+                        String newSubject = scanner.nextLine();
+                        admin.assignTeacherToSubject(teacher, newSubject);
+                    } else {
+                        System.out.println("Teacher not found.");
+                    }
+                    break;
+                case 6:
+                    return;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
+    private static void generateAdminReports(Admin admin) {
+        System.out.println("===== Generate Reports =====");
+        System.out.println("1. Class Attendance Report");
+        System.out.println("2. Monthly Attendance Report");
+        System.out.println("3. Weekly Attendance Report");
+        System.out.println("4. Back to Admin Menu");
+        System.out.print("Choose an option: ");
+        int choice = scanner.nextInt();
+        scanner.nextLine(); // Clear buffer
+        switch (choice) {
+            case 1:
+                System.out.print("Enter class name: ");
+                String className = scanner.nextLine();
+                System.out.println("Generating class attendance report for " + className);
+                break;
+            case 2:
+                System.out.println("Generating monthly attendance report...");
+                break;
+            case 3:
+                System.out.println("Generating weekly attendance report...");
+                break;
+            case 4:
+                return;
+            default:
+                System.out.println("Invalid option. Please try again.");
+        }
+    }
+
+    private static void updateAdminProfile(Admin admin) {
+        System.out.print("Enter new name (current: " + admin.getName() + "): ");
+        String newName = scanner.nextLine();
+        admin.updateProfile(newName);
+    }
+
+    private static void changeAdminPassword(Admin admin) {
+        System.out.print("Enter old password: ");
+        String oldPassword = scanner.nextLine();
+        System.out.print("Enter new password: ");
+        String newPassword = scanner.nextLine();
+        admin.changePassword(oldPassword, newPassword);
+    }
+
+    private static void showTeacherMenu(Teacher teacher) {
+        while (true) {
+            System.out.println("===== Teacher Menu =====");
+            System.out.println("1. Mark Attendance");
+            System.out.println("2. Update Attendance");
+            System.out.println("3. View Student Attendance");
+            System.out.println("4. Approve Leave Request");
+            System.out.println("5. Reject Leave Request");
+            System.out.println("6. Logout");
+            System.out.print("Choose an option: ");
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Clear buffer
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter student ID: ");
+                    int studentId = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
+                    Student student = admin.findStudentById(studentId);
+                    if (student != null) {
+                        System.out.print("Enter date (yyyy-MM-dd): ");
+                        String date = scanner.nextLine();
+                        System.out.print("Enter status (Present/Absent/Late/Excused): ");
+                        String status = scanner.nextLine();
+                        teacher.markAttendance(student, date, status);
+                    } else {
+                        System.out.println("Student not found.");
+                    }
+                    break;
+                case 2:
+                    System.out.print("Enter student ID: ");
+                    studentId = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
+                    student = admin.findStudentById(studentId);
+                    if (student != null) {
+                        System.out.print("Enter date (yyyy-MM-dd): ");
+                        String date = scanner.nextLine();
+                        System.out.print("Enter new status (Present/Absent/Late/Excused): ");
+                        String newStatus = scanner.nextLine();
+                        teacher.updateAttendance(student, date, newStatus);
+                    } else {
+                        System.out.println("Student not found.");
+                    }
+                    break;
+                case 3:
+                    System.out.print("Enter student ID: ");
+                    studentId = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
+                    student = admin.findStudentById(studentId);
+                    if (student != null) {
+                        teacher.viewStudentAttendance(student);
+                    } else {
+                        System.out.println("Student not found.");
+                    }
+                    break;
+                case 4:
+                    System.out.print("Enter student ID: ");
+                    studentId = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
+                    student = admin.findStudentById(studentId);
+                    if (student != null) {
+                        System.out.print("Enter date (yyyy-MM-dd): ");
+                        String date = scanner.nextLine();
+                        teacher.approveLeaveRequest(student, date);
+                    } else {
+                        System.out.println("Student not found.");
+                    }
+                    break;
+                case 5:
+                    System.out.print("Enter student ID: ");
+                    studentId = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
+                    student = admin.findStudentById(studentId);
+                    if (student != null) {
+                        System.out.print("Enter date (yyyy-MM-dd): ");
+                        String date = scanner.nextLine();
+                        System.out.print("Enter reason for rejection: ");
+                        String reason = scanner.nextLine();
+                        teacher.rejectLeaveRequest(student, date, reason);
+                    } else {
+                        System.out.println("Student not found.");
+                    }
+                    break;
+                case 6:
+                    teacher.logout();
+                    currentUser = null;
+                    return;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
+    private static void showStudentMenu(Student student) {
+        while (true) {
+            System.out.println("===== Student Menu =====");
+            System.out.println("1. View Attendance");
+            System.out.println("2. Calculate Attendance Percentage");
+            System.out.println("3. Submit Leave Request");
+            System.out.println("4. Update Profile");
+            System.out.println("5. Change Password");
+            System.out.println("6. Logout");
+            System.out.print("Choose an option: ");
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Clear buffer
+            switch (choice) {
+                case 1:
+                    student.viewAttendance();
+                    break;
+                case 2:
+                    double percentage = student.calculateAttendancePercentage();
+                    System.out.println("Your attendance percentage is: " + percentage + "%");
+                    break;
+                case 3:
+                    System.out.print("Enter date (yyyy-MM-dd): ");
+                    String date = scanner.nextLine();
+                    System.out.print("Enter reason for leave: ");
+                    String reason = scanner.nextLine();
+                    student.submitLeaveRequest(date, reason);
+                    break;
+                case 4:
+                    System.out.print("Enter new name: ");
+                    String newName = scanner.nextLine();
+                    student.updateProfile(newName);
+                    break;
+                case 5:
+                    System.out.print("Enter old password: ");
+                    String oldPassword = scanner.nextLine();
+                    System.out.print("Enter new password: ");
+                    String newPassword = scanner.nextLine();
+                    student.changePassword(oldPassword, newPassword);
+                    break;
+                case 6:
+                    student.logout();
+                    currentUser = null;
+                    return;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+}
